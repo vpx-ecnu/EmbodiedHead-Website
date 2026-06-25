@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EmbodiedHead Project Page</title>
+  <link rel="stylesheet" href="static/styles.css?v=20260413-3" />
+  <link rel="stylesheet" href="static/project-page.css?v=20260625-3" />
+</head>
+<body class="project-page">
+  <main class="project-page-shell">
+    <header class="project-hero">
+      <h1 class="project-title">EmbodiedHead: Real-Time Listening and Speaking Avatar for Conversational Agents</h1>
+      <div class="project-authors">
+        <span class="author-name">Yu Zhang<sup>1*</sup></span>
+        <span class="author-name">Kaiyuan Shen<sup>1*</sup></span>
+        <span class="author-name">Yang Li<sup>1,2†</sup></span>
+      </div>
+      <div class="project-affiliation">
+        <div><sup>1</sup>School of Computer Science and Technology, East China Normal University, Shanghai, China</div>
+        <div><sup>2</sup>Garabido Shanghai Technology Co., Ltd., Shanghai, China</div>
+        <div class="project-notes">* Equal contribution. † Corresponding author.</div>
+      </div>
+      <div class="project-links">
+        <a class="project-link" href="assets/embodiedhead.pdf" target="_blank" rel="noreferrer">Paper</a>
+        <a class="project-link" href="https://arxiv.org/abs/2604.17211" target="_blank" rel="noreferrer">arXiv</a>
+        <span class="project-link is-disabled" aria-disabled="true">Code (coming soon)</span>
+      </div>
+      <figure class="hero-figure">
+        <div class="figure-pdf-shell js-pdf-figure" data-pdf-src="assets/mainpic.pdf" style="--figure-ratio: 1382 / 537;">
+          <canvas class="figure-pdf-canvas" aria-label="EmbodiedHead teaser figure"></canvas>
+          <a class="figure-pdf-fallback" href="assets/mainpic.pdf" target="_blank" rel="noreferrer">Open the teaser figure PDF</a>
+        </div>
+        <figcaption>We present EmbodiedHead, which generates a real-time head-embodied avatar
+for LLMs. Unlike dual-audio methods, it uses a single audio stream with explicit
+listening-speaking state conditioning to achieve unified conversational behavior.</figcaption>
+      </figure>
+    </header>
+
+    <section id="interactive-demo" class="project-section project-demo-section">
+      <div class="section-heading">
+        <h2>Interactive Demo</h2>
+        <p>Try the live EmbodiedHead system directly in the browser. You can chat with EmbodiedHead using Qwen as the LLM backend.</p>
+        <p>If the interactive demo below is temporarily unavailable, you can still try the full experience at <a href="https://www.embodiedhead.xyz/" target="_blank" rel="noreferrer">https://www.embodiedhead.xyz/</a>.</p>
+      </div>
+      <div class="demo-showcase">
+        <div class="shell">
+          <aside class="panel settings">
+            <div class="settings-top">
+              <div class="title">
+                <h1>EmbodiedHead</h1>
+                <div class="title-actions">
+                  <button id="selfTestOpenBtn" class="utility-btn" type="button" aria-haspopup="dialog" aria-expanded="false">设备自检</button>
+                  <button id="langToggleBtn" class="lang-toggle" type="button">🌐</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-body">
+              <div class="group">
+                <label id="identityLabel">身份（选择已有身份，或上传新图片）</label>
+                <div class="identity-list" id="identityList"></div>
+                <input id="identityName" type="text" placeholder="新身份名称（可选）" />
+                <input id="identityFile" type="file" accept="image/png,image/jpeg" hidden />
+                <div class="file-row">
+                  <button id="identityFileBtn" class="btn secondary" type="button">第1步：选择图片</button>
+                  <span id="identityFileName" class="file-name">未选择文件</span>
+                </div>
+                <div id="identityFormatsNote" class="upload-format-note">支持 JPG / JPEG / PNG</div>
+                <div class="btn-row">
+                  <button id="uploadBtn" class="btn upload-action">第2步：上传并初始化身份</button>
+                </div>
+              </div>
+
+              <div class="group">
+                <label id="modelLabel">大模型</label>
+                <div class="picker">
+                  <button id="modelPickerBtn" class="picker-trigger" type="button" aria-haspopup="dialog" aria-expanded="false">
+                    <span class="picker-trigger-main">
+                      <span id="modelPickerTitle" class="picker-trigger-title">-</span>
+                      <span id="modelPickerMeta" class="picker-trigger-meta">-</span>
+                    </span>
+                    <span class="picker-caret" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="group">
+                <label id="voiceLabel">音色</label>
+                <div class="picker">
+                  <button id="voicePickerBtn" class="picker-trigger" type="button" aria-haspopup="dialog" aria-expanded="false">
+                    <span class="picker-trigger-main">
+                      <span id="voicePickerTitle" class="picker-trigger-title">-</span>
+                      <span id="voicePickerMeta" class="picker-trigger-meta">-</span>
+                    </span>
+                    <span class="picker-caret" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="group">
+                <label id="modeLabelLeft">模式</label>
+                <div id="modeSegmented" class="mode-segmented"></div>
+              </div>
+            </div>
+          </aside>
+
+          <main class="panel stage">
+            <div class="stage-head">
+              <span id="stageTitle">实时渲染窗口</span>
+              <div id="status" class="status stage-status" data-level="neutral" aria-live="polite">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span class="status-text">未连接</span>
+              </div>
+            </div>
+            <div class="video-wrap">
+              <canvas id="canvas" width="512" height="512"></canvas>
+            </div>
+            <div class="stage-foot">
+              <div class="stats" id="stats">
+                <span class="pill">WS: -</span>
+                <span class="pill">缓冲帧: -</span>
+                <span class="pill">状态: idle</span>
+              </div>
+              <div class="stage-actions">
+                <div class="stage-audio-icons" aria-label="Audio levels">
+                  <button id="stageMicMeter" class="stage-audio-icon-meter" type="button" aria-label="麦克风 0%" title="麦克风 0%">
+                    <span class="stage-audio-icon mic">
+                      <span id="stageMicMeterFill" class="stage-audio-icon-liquid"></span>
+                    </span>
+                  </button>
+                  <button id="stageSpeakerMeter" class="stage-audio-icon-meter" type="button" aria-label="扬声器 0%" title="扬声器 0%">
+                    <span class="stage-audio-icon speaker">
+                      <span id="stageSpeakerMeterFill" class="stage-audio-icon-liquid"></span>
+                    </span>
+                  </button>
+                </div>
+                <div class="stage-action-buttons">
+                  <button id="sessionBtn" class="btn primary stage-primary-btn">开始</button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <section class="project-section abstract-section">
+      <div class="section-heading centered">
+        <h2>Abstract</h2>
+      </div>
+      <div class="paper-card paper-card--soft">
+        <p>
+          We present EmbodiedHead, a speech-driven talking-head framework that equips LLMs with real-time visual avatars for conversation. A practical embodied avatar must achieve real-time generation, unified listening-speaking behavior, and high rendered visual quality simultaneously. Our framework couples the first Rectified-Flow Diffusion Transformer (DiT) for this task with a differentiable renderer, enabling diverse, high-fidelity generation in as few as four sampling steps. Prior listening-speaking methods rely on dual-stream audio, introducing an interlocutor look-ahead dependency incompatible with causal user–LLM interaction. We instead adopt a single-stream interface with explicit per-frame listening-speaking state conditioning and a Streaming Audio Scheduler, suppressing spurious mouth motion during listening while enabling seamless turn-taking. A two-stage training scheme of coefficient-space pretraining and joint image-domain refinement further closes the gap between motion-level supervision and rendered quality. Extensive experiments demonstrate state-of-the-art visual quality and motion fidelity in both speaking and listening scenarios.
+        </p>
+      </div>
+    </section>
+
+    <section class="project-section">
+      <div class="section-heading centered">
+        <h2>Overview</h2>
+      </div>
+      <figure class="overview-figure">
+        <div class="figure-pdf-shell js-pdf-figure" data-pdf-src="assets/overview.pdf" style="--figure-ratio: 1380 / 600;">
+          <canvas class="figure-pdf-canvas" aria-label="EmbodiedHead overview figure"></canvas>
+          <a class="figure-pdf-fallback" href="assets/overview.pdf" target="_blank" rel="noreferrer">Open the overview figure PDF</a>
+        </div>
+        <figcaption>Overview of EmbodiedHead. It employs a Rectified-Flow DiT to generate speech-driven talking-head animation in a few steps. It conditions on the reference, timestep, motion magnitude, and LS-state. A streaming scheduler merges user and LLM audio, enabling unified listening-speaking behavior.</figcaption>
+      </figure>
+    </section>
+
+    <section class="project-section results-section">
+      <div class="section-heading centered results-heading-main">
+        <h2>EmbodiedHead Results</h2>
+      </div>
+      <div class="results-block">
+        <div class="mini-demo-subtitle">High-fidelity and Liveliness</div>
+        <div class="mini-demo-stack" aria-label="EmbodiedHead result gallery">
+          <div class="mini-demo-row mini-demo-row--three">
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-01.png">
+                  <source src="assets/embodiedhead-small-demo-01.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-01.png" alt="Reference image for EmbodiedHead result 01" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-02.png">
+                  <source src="assets/embodiedhead-small-demo-02.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-02.png" alt="Reference image for EmbodiedHead result 02" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-03.jpg">
+                  <source src="assets/embodiedhead-small-demo-03.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-03.jpg" alt="Reference image for EmbodiedHead result 03" />
+              </div>
+            </article>
+          </div>
+          <div class="mini-demo-row mini-demo-row--three">
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-04.jpg">
+                  <source src="assets/embodiedhead-small-demo-04.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-04.jpg" alt="Reference image for EmbodiedHead result 04" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-05.jpg">
+                  <source src="assets/embodiedhead-small-demo-05.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-05.jpg" alt="Reference image for EmbodiedHead result 05" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-06.png">
+                  <source src="assets/embodiedhead-small-demo-06.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-06.png" alt="Reference image for EmbodiedHead result 06" />
+              </div>
+            </article>
+          </div>
+          <div class="mini-demo-row mini-demo-row--three">
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-07.jpg">
+                  <source src="assets/embodiedhead-small-demo-07.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-07.jpg" alt="Reference image for EmbodiedHead result 07" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-08.jpg">
+                  <source src="assets/embodiedhead-small-demo-08.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-08.jpg" alt="Reference image for EmbodiedHead result 08" />
+              </div>
+            </article>
+            <article class="mini-demo-tile">
+              <div class="mini-demo-frame">
+                <video controls preload="metadata" playsinline poster="assets/embodiedhead-small-demo-ref-09.jpg">
+                  <source src="assets/embodiedhead-small-demo-09.mp4" type="video/mp4" />
+                </video>
+                <img class="mini-demo-ref-thumb" src="assets/embodiedhead-small-demo-ref-09.jpg" alt="Reference image for EmbodiedHead result 09" />
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="mini-demo-subtitle comparison-subtitle">Comparisons in Standard Speaking Scenarios</div>
+        <div class="comparison-carousel" aria-label="EmbodiedHead comparison gallery" data-comparison-carousel tabindex="0">
+          <div class="comparison-carousel-stage">
+            <button class="comparison-carousel-arrow comparison-carousel-arrow--prev" type="button" aria-label="Previous comparison video" data-carousel-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3a1 1 0 0 1 0 1.4L9.41 12l5.3 5.3a1 1 0 0 1-1.42 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.42 0Z"></path></svg>
+            </button>
+            <div class="comparison-carousel-viewport">
+              <div class="comparison-carousel-track" data-carousel-track>
+                <article class="comparison-carousel-slide" aria-hidden="false">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/embodiedhead-comparison-poster-01.png?v=20260624-1">
+                    <source src="assets/embodiedhead-comparison-01.mp4?v=20260624-1" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/embodiedhead-comparison-poster-02.png?v=20260624-1">
+                    <source src="assets/embodiedhead-comparison-02.mp4?v=20260624-1" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/embodiedhead-comparison-poster-03.png?v=20260624-1">
+                    <source src="assets/embodiedhead-comparison-03.mp4?v=20260624-1" type="video/mp4" />
+                  </video>
+                </article>
+              </div>
+            </div>
+            <button class="comparison-carousel-arrow comparison-carousel-arrow--next" type="button" aria-label="Next comparison video" data-carousel-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 18.7a1 1 0 0 1 0-1.4l5.29-5.3-5.3-5.3a1 1 0 1 1 1.42-1.4l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.42 0Z"></path></svg>
+            </button>
+          </div>
+          <div class="comparison-carousel-dots" aria-label="Comparison slide navigation">
+            <button class="comparison-carousel-dot is-active" type="button" aria-label="Show comparison video 1" aria-current="true" data-carousel-dot="0"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show comparison video 2" aria-current="false" data-carousel-dot="1"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show comparison video 3" aria-current="false" data-carousel-dot="2"></button>
+          </div>
+        </div>
+
+        <div class="mini-demo-subtitle interactive-comparison-subtitle">Comparisons in Interactive Listening-Speaking Scenarios</div>
+        <div class="comparison-carousel comparison-carousel--interactive" aria-label="EmbodiedHead interactive comparison gallery" data-comparison-carousel tabindex="0">
+          <div class="comparison-carousel-stage">
+            <button class="comparison-carousel-arrow comparison-carousel-arrow--prev" type="button" aria-label="Previous interactive comparison video" data-carousel-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 5.3a1 1 0 0 1 0 1.4L9.41 12l5.3 5.3a1 1 0 0 1-1.42 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.42 0Z"></path></svg>
+            </button>
+            <div class="comparison-carousel-viewport" style="--comparison-carousel-ratio: 1440 / 1080;">
+              <div class="comparison-carousel-track" data-carousel-track>
+                <article class="comparison-carousel-slide" aria-hidden="false">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/interactive-comparison-poster-01.png?v=20260625-1">
+                    <source src="assets/1-1.mp4?v=20260625-1" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/interactive-comparison-poster-02.png?v=20260625-2">
+                    <source src="assets/2-2.mp4?v=20260625-2" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/interactive-comparison-poster-03.png?v=20260625-2">
+                    <source src="assets/3-3.mp4?v=20260625-2" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/interactive-comparison-poster-04.png?v=20260625-1">
+                    <source src="assets/4-4.mp4?v=20260625-1" type="video/mp4" />
+                  </video>
+                </article>
+                <article class="comparison-carousel-slide" aria-hidden="true">
+                  <video class="comparison-carousel-video" controls preload="metadata" playsinline poster="assets/interactive-comparison-poster-05.png?v=20260625-1">
+                    <source src="assets/5-5.mp4?v=20260625-1" type="video/mp4" />
+                  </video>
+                </article>
+              </div>
+            </div>
+            <button class="comparison-carousel-arrow comparison-carousel-arrow--next" type="button" aria-label="Next interactive comparison video" data-carousel-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 18.7a1 1 0 0 1 0-1.4l5.29-5.3-5.3-5.3a1 1 0 1 1 1.42-1.4l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.42 0Z"></path></svg>
+            </button>
+          </div>
+          <div class="comparison-carousel-dots" aria-label="Interactive comparison slide navigation">
+            <button class="comparison-carousel-dot is-active" type="button" aria-label="Show interactive comparison video 1" aria-current="true" data-carousel-dot="0"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show interactive comparison video 2" aria-current="false" data-carousel-dot="1"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show interactive comparison video 3" aria-current="false" data-carousel-dot="2"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show interactive comparison video 4" aria-current="false" data-carousel-dot="3"></button>
+            <button class="comparison-carousel-dot" type="button" aria-label="Show interactive comparison video 5" aria-current="false" data-carousel-dot="4"></button>
+          </div>
+        </div>
+
+        <div class="mini-demo-subtitle chatting-subtitle">Chatting with EmbodiedHead</div>
+        <div class="video-card video-card--plain video-card--feature">
+          <video class="project-video" controls preload="metadata" playsinline poster="assets/embodiedhead-demo-poster.png?v=20260414-10">
+            <source src="assets/embodiedhead-demo.mp4?v=20260414-10" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <section class="project-section bibtex-section">
+      <div class="section-heading">
+        <h2>BibTeX</h2>
+      </div>
+      <div class="paper-card bibtex-card">
+<pre><code>@misc{zhang2026embodiedhead,
+  title  = {EmbodiedHead: Real-Time Listening and Speaking Avatar for Conversational Agents},
+  author = {Zhang, Yu and Shen, Kaiyuan and Li, Yang},
+  year   = {2026},
+  eprint = {2604.17211},
+  archivePrefix = {arXiv},
+  url    = {https://arxiv.org/abs/2604.17211}
+}</code></pre>
+      </div>
+    </section>
+    <footer class="project-footer">
+      <small>Images and videos are used for academic demonstration only. If you are the copyright holder and have concerns, please contact us.</small>
+    </footer>
+  </main>
+
+  <div id="toastViewport" class="toast-viewport" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="blockingModal" class="blocking-modal" role="dialog" aria-modal="true" aria-live="assertive">
+    <div class="blocking-modal-card">
+      <div class="blocking-modal-spinner"></div>
+      <div id="blockingModalText" class="blocking-modal-text">后台正在初始化身份，请稍候...</div>
+    </div>
+  </div>
+
+  <div id="pickerOverlay" class="picker-overlay" aria-hidden="true">
+    <div id="pickerBackdrop" class="picker-backdrop"></div>
+    <div class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="pickerSheetTitle">
+      <div class="picker-sheet-head">
+        <div>
+          <div id="pickerSheetEyebrow" class="picker-sheet-eyebrow">Select</div>
+          <div id="pickerSheetTitle" class="picker-sheet-title">-</div>
+        </div>
+        <button id="pickerCloseBtn" class="picker-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="pickerOptions" class="picker-options"></div>
+    </div>
+  </div>
+
+  <div id="selfTestOverlay" class="picker-overlay self-test-overlay" aria-hidden="true">
+    <div id="selfTestBackdrop" class="picker-backdrop"></div>
+    <div class="picker-sheet self-test-sheet" role="dialog" aria-modal="true" aria-labelledby="selfTestSheetTitle">
+      <div class="picker-sheet-head self-test-sheet-head">
+        <div>
+          <div id="selfTestSheetEyebrow" class="picker-sheet-eyebrow">Diagnostics</div>
+          <div id="selfTestSheetTitle" class="picker-sheet-title">设备自检</div>
+        </div>
+        <button id="selfTestCloseBtn" class="picker-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="self-test-panel-body self-test-sheet-body">
+        <div class="self-test-stack">
+          <div class="self-test-card">
+            <div class="self-test-card-head">
+              <div>
+                <div id="micSelfTestTitle" class="self-test-card-title">麦克风回声测试</div>
+                <div id="micSelfTestDesc" class="self-test-card-meta">说话时查看本地与服务端音量，并确认能听到回声。</div>
+              </div>
+              <span id="micSelfTestBadge" class="self-test-badge">未开始</span>
+            </div>
+            <div class="self-test-meter-list">
+              <div class="self-test-meter-row">
+                <div class="self-test-meter-top">
+                  <span id="micSelfTestLocalLabel">本地拾音</span>
+                  <span id="micSelfTestLocalValue">0%</span>
+                </div>
+                <div class="self-test-track">
+                  <div id="micSelfTestLocalFill" class="self-test-fill"></div>
+                </div>
+              </div>
+              <div class="self-test-meter-row">
+                <div class="self-test-meter-top">
+                  <span id="micSelfTestServerLabel">服务端接收</span>
+                  <span id="micSelfTestServerValue">0%</span>
+                </div>
+                <div class="self-test-track">
+                  <div id="micSelfTestServerFill" class="self-test-fill server"></div>
+                </div>
+              </div>
+            </div>
+            <div id="micSelfTestHint" class="self-test-note">建议佩戴耳机，避免回授。说话时本地与服务端音量条上涨，并能听到回声，即说明链路正常。</div>
+            <div class="btn-row">
+              <button id="micSelfTestBtn" class="btn secondary" type="button">开始麦克风测试</button>
+            </div>
+          </div>
+
+          <div class="self-test-card">
+            <div class="self-test-card-head">
+              <div>
+                <div id="speakerSelfTestTitle" class="self-test-card-title">扬声器测试音</div>
+                <div id="speakerSelfTestDesc" class="self-test-card-meta">播放一段由后端提供的测试音，确认声音能正常传到当前浏览器。</div>
+              </div>
+              <span id="speakerSelfTestBadge" class="self-test-badge">未播放</span>
+            </div>
+            <div id="speakerSelfTestVisual" class="speaker-test-visual" aria-hidden="true">
+              <span class="speaker-test-bar"></span>
+              <span class="speaker-test-bar"></span>
+              <span class="speaker-test-bar"></span>
+              <span class="speaker-test-bar"></span>
+              <span class="speaker-test-bar"></span>
+            </div>
+            <div id="speakerSelfTestHint" class="self-test-note">点击播放测试音，能清晰听到三段提示音则说明浏览器侧播放正常。</div>
+            <div class="btn-row">
+              <button id="speakerSelfTestBtn" class="btn secondary" type="button">播放测试音</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="backend-config.js?v=20260413-4"></script>
+  <script type="module" src="static/project-page-pdf.js?v=20260621-1"></script>
+  <script src="static/i18n.js?v=20260413-4"></script>
+  <script src="static/app-core.js?v=20260413-4"></script>
+  <script src="static/app-runtime.js?v=20260413-4"></script>
+  <script src="static/project-page-carousel.js?v=20260624-3"></script>
+</body>
+</html>
