@@ -125,27 +125,15 @@ body.project-page::before {
 }
 
 .project-venue {
-  margin-top: 22px;
-  display: flex;
-  justify-content: center;
-}
-
-.venue-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 22px;
-  border-radius: 999px;
-  background: #2f3136;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  border: 1px solid #2f3136;
+  margin-top: 20px;
+  color: #2f3136;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .project-links {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
